@@ -7,18 +7,17 @@ import lombok.*;
 @Table(name = "secret_key")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@ToString
 public class SecretKeyDAO {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Setter(AccessLevel.NONE)
-    private Long id;
-
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Integer id;
+    @Column(name = "name")
     private String name;
-
+    @Column(name = "secretKey")
     private String secretKey;
-
+    @Column(name = "owner")
     private String owner;
 }

@@ -18,6 +18,5 @@ public class SecretKeyDAO {
     private String name;
     @Column(name = "secretKey")
     private String secretKey;
-    @Column(name = "owner")
-    private String owner;
+
 }

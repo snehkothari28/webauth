@@ -14,5 +14,4 @@ public class SecretKeyModel {
 
     private String secretKey;
 
-    private String owner;
 }

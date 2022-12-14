@@ -3,6 +3,7 @@ package com.sk.webauth.service;
 import com.eatthepath.otp.TimeBasedOneTimePasswordGenerator;
 import com.sk.webauth.dao.SecretKeyDAO;
 import com.sk.webauth.model.GeneratedSecretKeyModel;
+import com.sk.webauth.model.SecretKeyModel;
 import com.sk.webauth.repository.SecretKeyRepository;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.codec.binary.Base32;
@@ -48,24 +49,40 @@ public class TOTPGeneratorService {
             GeneratedSecretKeyModel generatedSecretKeyModel = new GeneratedSecretKeyModel();
             generatedSecretKeyModel.setName(secretKeyDAO.getName());
             generatedSecretKeyModel.setSecret(decodeOTP(secretKeyDAO.getSecretKey()));
+            generatedSecretKeyModel.setId(secretKeyDAO.getId());
             generatedSecretKeyModelList.add(generatedSecretKeyModel);
         }
         return generatedSecretKeyModelList;
     }
 
-    public Optional<GeneratedSecretKeyModel> getOTPById(Integer id) throws InvalidKeyException {
+    public Optional<SecretKeyModel> getSecretKeyById(Integer id) throws InvalidKeyException {
         Optional<SecretKeyDAO> secretKeyDAO = secretKeyRepository.findById(id);
         if (secretKeyDAO.isPresent()) {
-            GeneratedSecretKeyModel generatedSecretKeyModel = new GeneratedSecretKeyModel();
-            generatedSecretKeyModel.setName(secretKeyDAO.get().getName());
-            generatedSecretKeyModel.setSecret(decodeOTP(secretKeyDAO.get().getSecretKey()));
-            return Optional.of(generatedSecretKeyModel);
+            SecretKeyModel secretKeyModel = new SecretKeyModel();
+            secretKeyModel.setId(id);
+            secretKeyModel.setName(secretKeyDAO.get().getName());
+            secretKeyModel.setSecretKey(secretKeyDAO.get().getSecretKey());
+            return Optional.of(secretKeyModel);
         }
 
-        return Optional.<GeneratedSecretKeyModel>empty();
+        return Optional.<SecretKeyModel>empty();
 
     }
 
+    public void updateTOTP(Integer id, SecretKeyModel secretKeyModel) throws InvalidKeyException {
+        Optional<SecretKeyDAO> secretKeyDAOOptional = secretKeyRepository.findById(id);
+        if (secretKeyDAOOptional.isEmpty()) {
+            throw new NullPointerException("invalid id " + id);
+        }
+        SecretKeyDAO secretKeyDAO = secretKeyDAOOptional.get();
+        secretKeyDAO.setName(secretKeyModel.getName());
+        secretKeyDAO.setSecretKey(secretKeyModel.getSecretKey());
+        secretKeyRepository.save(secretKeyDAO);
+    }
+
+    public void deleteTOTP(Integer id) throws InvalidKeyException {
+        secretKeyRepository.deleteById(id);
+    }
 
     private String decodeOTP(String encodedKey) throws InvalidKeyException {
 

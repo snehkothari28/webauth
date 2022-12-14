@@ -23,7 +23,6 @@ public class TOTPCreatorService {
         SecretKeyDAO secretKeyDAO = new SecretKeyDAO();
         secretKeyDAO.setName(secretKeyModel.getName());
         secretKeyDAO.setSecretKey(secretKeyModel.getSecretKey());
-        secretKeyDAO.setOwner(secretKeyModel.getOwner());
         logger.info("saving {} with id {} in DB", secretKeyDAO, secretKeyDAO.getId());
         secretKeyRepository.save(secretKeyDAO);
         logger.info("saved {} with id {} in DB", secretKeyDAO, secretKeyDAO.getId());

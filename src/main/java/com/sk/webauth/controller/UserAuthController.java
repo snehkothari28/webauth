@@ -45,13 +45,27 @@ public class UserAuthController {
     }
 
     @GetMapping("/get/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<SecretKeyModel> getById(@PathVariable("id") String id) throws InvalidKeyException {
+        Optional<SecretKeyModel> secretKeyModel = totpGeneratorService.getSecretKeyById(Integer.valueOf(id));
+
+        logger.info("Received request at /get/ {} : {}", id, secretKeyModel.get());
+
+        return new ResponseEntity<SecretKeyModel>(secretKeyModel.get(), HttpStatus.OK);
+    }
+
+    @PutMapping("/update/{id}")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<GeneratedSecretKeyModel> getById(@RequestParam("id") String id) throws InvalidKeyException {
-        Optional<GeneratedSecretKeyModel> generatedSecretKeyModel = totpGeneratorService.getOTPById(Integer.valueOf(id));
+    public void update(@PathVariable("id") String id, @RequestBody SecretKeyModel secretKeyModel) throws InvalidKeyException {
+        logger.info("Received request at /update/ {} : {}", id, secretKeyModel);
+        totpGeneratorService.updateTOTP(Integer.valueOf(id), secretKeyModel);
+    }
 
-        logger.info("Received request at /get/ {} : {}", id, generatedSecretKeyModel.get());
-
-        return new ResponseEntity<GeneratedSecretKeyModel>(generatedSecretKeyModel.get(), HttpStatus.OK);
+    @DeleteMapping("/delete/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void delete(@PathVariable("id") String id) throws InvalidKeyException {
+        logger.info("Received request at /delete/ {}", id);
+        totpGeneratorService.deleteTOTP(Integer.valueOf(id));
     }
 
 }

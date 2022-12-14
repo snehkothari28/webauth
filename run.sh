@@ -1,1 +1,1 @@
-mvn clean spring-boot:run -Dspring-boot.run.profiles=server
+mvn clean spring-boot:start -Dspring-boot.run.profiles=server

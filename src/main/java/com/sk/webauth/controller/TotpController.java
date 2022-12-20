@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-public class UserAuthController {
-    private static final Logger logger = LoggerFactory.getLogger(UserAuthController.class);
+public class TotpController {
+    private static final Logger logger = LoggerFactory.getLogger(TotpController.class);
     @Autowired
     private TOTPCreatorService totpCreatorService;
 
@@ -40,7 +40,7 @@ public class UserAuthController {
 
         logger.info("Received request at /getAll : {}", generatedSecretKeyModelList);
 
-        return new ResponseEntity<List<GeneratedSecretKeyModel>>(generatedSecretKeyModelList, HttpStatus.OK);
+        return new ResponseEntity<>(generatedSecretKeyModelList, HttpStatus.OK);
 
     }
 
@@ -49,9 +49,12 @@ public class UserAuthController {
     public ResponseEntity<SecretKeyModel> getById(@PathVariable("id") String id) throws InvalidKeyException {
         Optional<SecretKeyModel> secretKeyModel = totpGeneratorService.getSecretKeyById(Integer.valueOf(id));
 
+        if (secretKeyModel.isEmpty()) {
+            logger.error("Id {} is not present in DB", id);
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         logger.info("Received request at /get/ {} : {}", id, secretKeyModel.get());
-
-        return new ResponseEntity<SecretKeyModel>(secretKeyModel.get(), HttpStatus.OK);
+        return new ResponseEntity<>(secretKeyModel.get(), HttpStatus.OK);
     }
 
     @PutMapping("/update/{id}")

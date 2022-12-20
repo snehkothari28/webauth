@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mvn clean package
+./mvnw clean package
 if test -f nohup.out; then
   rm nohup.out
 fi

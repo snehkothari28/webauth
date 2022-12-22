@@ -42,19 +42,19 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
 
         String incomingRequestOrigin = req.getHeader("Origin");
-        if (!StringUtils.hasLength(incomingRequestOrigin)) {
-            ((HttpServletResponse) res).setStatus(401);
-            log.error("Request received has no origin");
-            res.getOutputStream().write(("Request received has no origin").getBytes());
-            return;
-        }
-        log.info("received request in filter from " + incomingRequestOrigin + " at " + req.getRequestURI());
-        if (!incomingRequestOrigin.equals(allowedOrigin)) {
-            ((HttpServletResponse) res).setStatus(401);
-            log.error("Request received from " + incomingRequestOrigin + " is forbidden");
-            res.getOutputStream().write(("Requests from " + incomingRequestOrigin + " are not allowed").getBytes());
-            return;
-        }
+//        if (!StringUtils.hasLength(incomingRequestOrigin)) {
+//            ((HttpServletResponse) res).setStatus(401);
+//            log.error("Request received has no origin");
+//            res.getOutputStream().write(("Request received has no origin").getBytes());
+//            return;
+//        }
+//        log.info("received request in filter from " + incomingRequestOrigin + " at " + req.getRequestURI());
+//        if (!incomingRequestOrigin.equals(allowedOrigin)) {
+//            ((HttpServletResponse) res).setStatus(401);
+//            log.error("Request received from " + incomingRequestOrigin + " is forbidden");
+//            res.getOutputStream().write(("Requests from " + incomingRequestOrigin + " are not allowed").getBytes());
+//            return;
+//        }
 
         if ("OPTIONS".equals(req.getMethod())) {
             res.setStatus(HttpServletResponse.SC_OK);

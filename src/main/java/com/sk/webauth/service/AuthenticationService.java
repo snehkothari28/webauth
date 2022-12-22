@@ -22,8 +22,8 @@ public class AuthenticationService {
     private static final GsonFactory gsonFactory = new GsonFactory();
 
     private final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
-    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
     private final GoogleIdTokenVerifier verifier;
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
     public AuthenticationService(@Value("${gsi.client.id}") String CLIENT_ID) {
         if (!StringUtils.hasLength(CLIENT_ID)) throw new RuntimeException("google client id empty.");
@@ -43,6 +43,7 @@ public class AuthenticationService {
         }
         if (idToken != null) {
             GoogleIdToken.Payload payload = idToken.getPayload();
+
             // Print user identifier
             String userId = payload.getSubject();
             // Get profile information from payload
@@ -50,7 +51,14 @@ public class AuthenticationService {
             String name = (String) payload.get("name");
             LocalDateTime now = LocalDateTime.now();
 
+            long epoch = System.currentTimeMillis() / 1000;
+
+            if (payload.getExpirationTimeSeconds() < epoch) {
+                log.warn("token expired for name: {} email: {} userId: {} accessing at: {} at {}", name, email, userId, contextPath, dtf.format(now));
+
+            }
             log.info("name: {} email: {} userId: {} accessed: {} at {}", name, email, userId, contextPath, dtf.format(now));
+
         } else {
             log.warn("Invalid ID token: " + idTokenString);
             throw new AuthenticationException("Invalid Token Id");

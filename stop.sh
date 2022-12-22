@@ -1,8 +1,8 @@
 #!/bin/bash
 
-kill "$(cat save_pid.txt)"
-while [[ test -d /proc/"$PID"/ ]]
+while [ -d "/proc/$PID" ]
 do
+    kill "$(cat save_pid.txt)"
     echo "removing process"
     sleep 15
 done

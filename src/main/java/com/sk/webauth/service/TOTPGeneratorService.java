@@ -83,7 +83,7 @@ public class TOTPGeneratorService {
         SecretKey secretKey = recordBelongsToOwner(id, owner);
 
         secretKey.setName(secretKeyModel.getName());
-        secretKey.setSecretKey(secretKeyModel.getSecretKey());
+        secretKey.setSecretKey(secretKey.getSecretKey());
         secretKey.setUrl(secretKeyModel.getUrl());
         secretKey.setEmail(secretKeyModel.getEmail());
         secretKey.setPassword(secretKeyModel.getPassword());

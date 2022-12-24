@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.security.InvalidKeyException;
 import java.util.List;
@@ -31,6 +32,8 @@ public class TotpController {
     @ResponseStatus(HttpStatus.CREATED)
     public void createAuthorization(@Valid @RequestBody SecretKeyModel secretKeyModel, @RequestHeader("owner-email") String owner) {
 
+        if (!StringUtils.hasLength(secretKeyModel.getSecretKey()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Secret key Missing");
         logger.info("Received request at /createAuth : {} by owner {}", secretKeyModel, owner);
         totpCreatorService.addAuth(secretKeyModel, owner);
     }

@@ -16,8 +16,6 @@ public class SecretKeyModel {
     @NotNull
     private String name;
 
-    @NotEmpty
-    @NotNull
     private String secretKey;
 
     private String url;

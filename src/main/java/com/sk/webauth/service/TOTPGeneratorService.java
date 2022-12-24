@@ -1,7 +1,7 @@
 package com.sk.webauth.service;
 
 import com.eatthepath.otp.TimeBasedOneTimePasswordGenerator;
-import com.sk.webauth.dao.SecretKeyDAO;
+import com.sk.webauth.dao.SecretKey;
 import com.sk.webauth.model.GeneratedSecretKeyModel;
 import com.sk.webauth.model.SecretKeyModel;
 import com.sk.webauth.repository.SecretKeyRepository;
@@ -10,7 +10,9 @@ import org.apache.commons.codec.binary.Base32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
@@ -42,46 +44,55 @@ public class TOTPGeneratorService {
     }
 
 
-    public List<GeneratedSecretKeyModel> getOTPAll() throws InvalidKeyException {
-        Iterable<SecretKeyDAO> secretKeyDAOList = secretKeyRepository.findAll();
+    public List<GeneratedSecretKeyModel> getOTPAll(String owner) {
+        Iterable<SecretKey> secretKeyDAOList = secretKeyRepository.findAll();
         List<GeneratedSecretKeyModel> generatedSecretKeyModelList = new ArrayList<>();
-        for (SecretKeyDAO secretKeyDAO : secretKeyDAOList) {
-            GeneratedSecretKeyModel generatedSecretKeyModel = new GeneratedSecretKeyModel();
-            generatedSecretKeyModel.setName(secretKeyDAO.getName());
-            generatedSecretKeyModel.setSecret(decodeOTP(secretKeyDAO.getSecretKey()));
-            generatedSecretKeyModel.setId(secretKeyDAO.getId());
-            generatedSecretKeyModelList.add(generatedSecretKeyModel);
+        for (SecretKey secretKey : secretKeyDAOList) {
+            generatedSecretKeyModelList.add(modelMapper(owner, secretKey));
         }
         return generatedSecretKeyModelList;
     }
 
-    public Optional<SecretKeyModel> getSecretKeyById(Integer id) throws InvalidKeyException {
-        Optional<SecretKeyDAO> secretKeyDAO = secretKeyRepository.findById(id);
-        if (secretKeyDAO.isPresent()) {
-            SecretKeyModel secretKeyModel = new SecretKeyModel();
-            secretKeyModel.setId(id);
-            secretKeyModel.setName(secretKeyDAO.get().getName());
-            secretKeyModel.setSecretKey(secretKeyDAO.get().getSecretKey());
-            return Optional.of(secretKeyModel);
+    private GeneratedSecretKeyModel modelMapper(String owner, SecretKey secretKey) {
+        GeneratedSecretKeyModel generatedSecretKeyModel = new GeneratedSecretKeyModel();
+        generatedSecretKeyModel.setName(secretKey.getName());
+        try {
+            generatedSecretKeyModel.setSecret(decodeOTP(secretKey.getSecretKey()));
+        } catch (InvalidKeyException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Not able to decode secret of " + secretKey.getName());
         }
-
-        return Optional.<SecretKeyModel>empty();
-
+        generatedSecretKeyModel.setId(secretKey.getId());
+        generatedSecretKeyModel.setEmail(secretKey.getEmail());
+        generatedSecretKeyModel.setUrl(secretKey.getUrl());
+        generatedSecretKeyModel.setName(secretKey.getName());
+        generatedSecretKeyModel.setIsOwner(owner.equalsIgnoreCase(secretKey.getOwner()));
+        return generatedSecretKeyModel;
     }
 
-    public void updateTOTP(Integer id, SecretKeyModel secretKeyModel) throws InvalidKeyException {
-        Optional<SecretKeyDAO> secretKeyDAOOptional = secretKeyRepository.findById(id);
-        if (secretKeyDAOOptional.isEmpty()) {
-            throw new NullPointerException("invalid id " + id);
+    public Optional<GeneratedSecretKeyModel> getSecretKeyById(Integer id, String owner) {
+        Optional<SecretKey> secretKeyOptional = secretKeyRepository.findById(id);
+        if (secretKeyOptional.isPresent()) {
+            SecretKey secretKey = secretKeyOptional.get();
+            return Optional.of(modelMapper(owner, secretKey));
         }
-        SecretKeyDAO secretKeyDAO = secretKeyDAOOptional.get();
-        secretKeyDAO.setName(secretKeyModel.getName());
-        secretKeyDAO.setSecretKey(secretKeyModel.getSecretKey());
-        secretKeyRepository.save(secretKeyDAO);
+        return Optional.<GeneratedSecretKeyModel>empty();
     }
 
-    public void deleteTOTP(Integer id) throws InvalidKeyException {
-        secretKeyRepository.deleteById(id);
+    public void updateTOTP(Integer id, SecretKeyModel secretKeyModel, String owner) {
+
+        SecretKey secretKey = recordBelongsToOwner(id, owner);
+
+        secretKey.setName(secretKeyModel.getName());
+        secretKey.setSecretKey(secretKeyModel.getSecretKey());
+        secretKey.setUrl(secretKeyModel.getUrl());
+        secretKey.setEmail(secretKeyModel.getEmail());
+        secretKey.setPassword(secretKeyModel.getPassword());
+        secretKeyRepository.save(secretKey);
+    }
+
+    public void deleteTOTP(Integer id, String owner) {
+        SecretKey secretKey = recordBelongsToOwner(id, owner);
+        secretKeyRepository.delete(secretKey);
     }
 
     private String decodeOTP(String encodedKey) throws InvalidKeyException {
@@ -97,18 +108,18 @@ public class TOTPGeneratorService {
         logger.info("OTP {} for secretKey {} ", OTP, encodedKey);
         return OTP;
     }
-//    private Key encodeKey(String secretKey) {
-//        byte[] decodedKey = base32.decode(secretKey);
-//        Key key = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
-////        String encodedString = base32.encodeToString(key.getEncoded());
-//
-////        logger.info("encodedString is " + encodedString + " for secretKey key " + secretKey);
-//        return key;
-//    }
 
-//    private void printCurrentTOTP(Key key) throws InvalidKeyException {
-//
-//
-//        System.out.println("Current password: " + totp.generateOneTimePasswordString(key, now));
-//    }
+    private SecretKey recordBelongsToOwner(Integer id, String owner) {
+        Optional<SecretKey> secretKeyDAOOptional = secretKeyRepository.findById(id);
+        if (secretKeyDAOOptional.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, id + " not found");
+        }
+        SecretKey secretKey = secretKeyDAOOptional.get();
+        if (!secretKey.getOwner().equalsIgnoreCase(owner)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Current user " + owner + " not allowed to update " + secretKey.getName());
+        }
+
+        return secretKey;
+    }
+
 }

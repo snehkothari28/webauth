@@ -33,7 +33,7 @@ public class AuthenticationService {
                 .build();
     }
 
-    public void verifyToken(String idTokenString, String contextPath
+    public String verifyToken(String idTokenString, String contextPath
     ) throws AuthenticationException {
         GoogleIdToken idToken = null;
         try {
@@ -58,6 +58,7 @@ public class AuthenticationService {
 
             }
             log.info("name: {} email: {} userId: {} accessed: {} at {}", name, email, userId, contextPath, dtf.format(now));
+            return email;
 
         } else {
             log.warn("Invalid ID token: " + idTokenString);

@@ -4,24 +4,30 @@ import com.sk.webauth.service.AuthenticationService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import org.apache.http.auth.AuthenticationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Enumeration;
+
+import static java.util.Collections.enumeration;
 
 @Component
 public class SimpleCORSFilter extends OncePerRequestFilter {
 
+    public static final String OWNER_EMAIL = "owner-email";
     private final Logger log = LoggerFactory.getLogger(SimpleCORSFilter.class);
-    @Value("${allow.origin.headers}")
-    private String allowedOrigin;
+//    @Value("${allow.origin.headers}")
+//    private String allowedOrigin;
 
     @Autowired
     private AuthenticationService authenticationService;
@@ -39,7 +45,7 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull FilterChain chain) throws ServletException, IOException {
 
         String incomingRequestOrigin = req.getHeader("Origin");
 //        if (!StringUtils.hasLength(incomingRequestOrigin)) {
@@ -64,24 +70,38 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
         }
 
         if (!StringUtils.hasLength(req.getHeader("authorization"))) {
-            ((HttpServletResponse) res).setStatus(401);
+            res.setStatus(401);
             log.error("Request received from " + incomingRequestOrigin + " have no authorization token");
             res.getOutputStream().write(("Request received from " + incomingRequestOrigin + " have no authorization token").getBytes());
             return;
         }
 
 
+        HttpServletRequestWrapper wrapper;
         try {
-            authenticationService.verifyToken(req.getHeader("authorization").replace("Bearer ", ""), req.getRequestURI());
+            String owner = authenticationService.verifyToken(req.getHeader("authorization").replace("Bearer ", ""), req.getRequestURI());
+            wrapper = addOwnerRequest(req, owner);
         } catch (AuthenticationException e) {
-            ((HttpServletResponse) res).setStatus(401);
+            res.setStatus(401);
             log.error("Token verification failed for request from " + incomingRequestOrigin + " to access " + req.getRequestURI());
             res.getOutputStream().write(("JWT token verification failed").getBytes());
             return;
         }
 
         addResponseHeaders(res, incomingRequestOrigin);
-        chain.doFilter(req, res);
+
+        chain.doFilter(wrapper, res);
+    }
+
+    private HttpServletRequestWrapper addOwnerRequest(HttpServletRequest request, String owner) {
+        return new HttpServletRequestWrapper(request) {
+            @Override
+            public Enumeration<String> getHeaders(String name) {
+                if (OWNER_EMAIL.equals(name))
+                    return enumeration(Collections.singleton(owner));
+                return super.getHeaders(name);
+            }
+        };
     }
 
     @Override

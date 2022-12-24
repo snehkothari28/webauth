@@ -10,6 +10,7 @@ import org.apache.commons.codec.binary.Base32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -28,11 +29,11 @@ import java.util.Optional;
 @Service
 public class TOTPGeneratorService {
     private static final Logger logger = LoggerFactory.getLogger(TOTPGeneratorService.class);
-
     TimeBasedOneTimePasswordGenerator totp = new TimeBasedOneTimePasswordGenerator();
     KeyGenerator keyGenerator;
     Base32 base32 = new Base32();
-
+    @Value("#{'${web.auth.super.admins}'.toLowerCase().split(',')}")
+    private List<String> superAdmins;
     @Autowired
     private SecretKeyRepository secretKeyRepository;
 
@@ -66,7 +67,8 @@ public class TOTPGeneratorService {
         generatedSecretKeyModel.setUrl(secretKey.getUrl());
         generatedSecretKeyModel.setName(secretKey.getName());
         generatedSecretKeyModel.setPassword(secretKey.getPassword());
-        generatedSecretKeyModel.setIsOwner(owner.equalsIgnoreCase(secretKey.getOwner()));
+        if (superAdmins.contains(owner)) generatedSecretKeyModel.setIsOwner(true);
+        else generatedSecretKeyModel.setIsOwner(owner.equalsIgnoreCase(secretKey.getOwner()));
         return generatedSecretKeyModel;
     }
 
@@ -116,7 +118,7 @@ public class TOTPGeneratorService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, id + " not found");
         }
         SecretKey secretKey = secretKeyDAOOptional.get();
-        if (!secretKey.getOwner().equalsIgnoreCase(owner)) {
+        if (!secretKey.getOwner().equalsIgnoreCase(owner) && !superAdmins.contains(owner.toLowerCase())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Current user " + owner + " not allowed to update " + secretKey.getName());
         }
 

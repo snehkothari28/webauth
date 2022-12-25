@@ -25,6 +25,10 @@ public class BackupScheduler {
     private BackupCsvGenerator backupCsvGenerator;
 
     @Scheduled(cron = "${web.auth.backup.cron}")
+    public void backupCronJob() {
+        backup();
+    }
+
     public void backup() {
         log.info("Starting backup service");
         try {

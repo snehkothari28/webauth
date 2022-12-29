@@ -33,8 +33,8 @@ public class AuthenticationService {
                 .build();
     }
 
-    public String verifyToken(String idTokenString, String contextPath
-    ) throws AuthenticationException {
+    public String verifyToken(String idTokenString, String contextPath,
+                              String requestId) throws AuthenticationException {
         GoogleIdToken idToken = null;
         try {
             idToken = verifier.verify(idTokenString);
@@ -54,14 +54,14 @@ public class AuthenticationService {
             long epoch = System.currentTimeMillis() / 1000;
 
             if (payload.getExpirationTimeSeconds() < epoch) {
-                log.warn("token expired for name: {} email: {} userId: {} accessing at: {} at {}", name, email, userId, contextPath, dtf.format(now));
+                log.warn("token expired for name: {} email: {} userId: {} accessing at: {} at {} for requestId: {}", name, email, userId, contextPath, dtf.format(now), requestId);
 
             }
-            log.info("name: {} email: {} userId: {} accessed: {} at {}", name, email, userId, contextPath, dtf.format(now));
+            log.info("name: {} email: {} userId: {} accessed: {} at {} for requestId: {}", name, email, userId, contextPath, dtf.format(now), requestId);
             return email;
 
         } else {
-            log.warn("Invalid ID token: " + idTokenString);
+            log.warn("Invalid ID token: {} for requestId: {}", idTokenString, requestId);
             throw new AuthenticationException("Invalid Token Id");
         }
     }

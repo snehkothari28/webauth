@@ -36,18 +36,20 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
         log.info("SimpleCORSFilter init");
     }
 
-    private static void addResponseHeaders(HttpServletResponse res, String incomingRequestOrigin) {
+    private static void addResponseHeaders(HttpServletResponse res, String incomingRequestOrigin, String requestId) {
         res.setHeader("Access-Control-Allow-Origin", incomingRequestOrigin);
         res.setHeader("Access-Control-Allow-Credentials", "true");
         res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT");
         res.setHeader("Access-Control-Max-Age", "3600");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, remember-me, authorization");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, remember-me, authorization, requestId");
+        if (requestId != null) res.setHeader("requestId", requestId);
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull FilterChain chain) throws ServletException, IOException {
 
         String incomingRequestOrigin = req.getHeader("Origin");
+
 //        if (!StringUtils.hasLength(incomingRequestOrigin)) {
 //            ((HttpServletResponse) res).setStatus(401);
 //            log.error("Request received has no origin");
@@ -65,7 +67,7 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
         if ("OPTIONS".equals(req.getMethod())) {
             res.setStatus(HttpServletResponse.SC_OK);
             log.info("OPTIONS received from " + incomingRequestOrigin);
-            addResponseHeaders(res, incomingRequestOrigin);
+            addResponseHeaders(res, incomingRequestOrigin, null);
             return;
         }
 
@@ -76,10 +78,10 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
             return;
         }
 
-
+        String requestId = req.getHeader("Origin");
         HttpServletRequestWrapper wrapper;
         try {
-            String owner = authenticationService.verifyToken(req.getHeader("authorization").replace("Bearer ", ""), req.getRequestURI());
+            String owner = authenticationService.verifyToken(req.getHeader("authorization").replace("Bearer ", ""), req.getRequestURI(), requestId);
             wrapper = addOwnerRequest(req, owner);
         } catch (AuthenticationException e) {
             res.setStatus(401);
@@ -88,7 +90,7 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
             return;
         }
 
-        addResponseHeaders(res, incomingRequestOrigin);
+        addResponseHeaders(res, incomingRequestOrigin, requestId);
 
         chain.doFilter(wrapper, res);
     }
@@ -97,8 +99,7 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
         return new HttpServletRequestWrapper(request) {
             @Override
             public Enumeration<String> getHeaders(String name) {
-                if (OWNER_EMAIL.equals(name))
-                    return enumeration(Collections.singleton(owner));
+                if (OWNER_EMAIL.equals(name)) return enumeration(Collections.singleton(owner));
                 return super.getHeaders(name);
             }
         };

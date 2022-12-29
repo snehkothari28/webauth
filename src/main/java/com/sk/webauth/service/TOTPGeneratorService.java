@@ -1,9 +1,11 @@
 package com.sk.webauth.service;
 
 import com.eatthepath.otp.TimeBasedOneTimePasswordGenerator;
+import com.sk.webauth.dao.DelegationTable;
 import com.sk.webauth.dao.SecretKey;
 import com.sk.webauth.model.DelegationTableModel;
 import com.sk.webauth.model.GeneratedSecretKeyModel;
+import com.sk.webauth.repository.DelegationTableRepository;
 import com.sk.webauth.repository.SecretKeyRepository;
 import com.sk.webauth.util.DelegationModelConverter;
 import jakarta.annotation.PostConstruct;
@@ -38,6 +40,9 @@ public class TOTPGeneratorService {
     @Autowired
     private SecretKeyRepository secretKeyRepository;
 
+    @Autowired
+    private DelegationTableRepository delegationTableRepository;
+
 
     @PostConstruct
     public void init() throws NoSuchAlgorithmException {
@@ -48,7 +53,8 @@ public class TOTPGeneratorService {
 
 
     public List<GeneratedSecretKeyModel> getOTPAll(String owner, String requestId) {
-        Iterable<SecretKey> secretKeyDAOList = secretKeyRepository.findAll();
+        List<DelegationTable> delegationTableIterable = delegationTableRepository.findByEmail(owner);
+        Iterable<SecretKey> secretKeyDAOList = delegationTableIterable.stream().map(DelegationTable::getSecretKey).toList();
 
         List<GeneratedSecretKeyModel> generatedSecretKeyModelList = new ArrayList<>();
         for (SecretKey secretKey : secretKeyDAOList) {

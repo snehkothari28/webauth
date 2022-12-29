@@ -1,8 +1,12 @@
 package com.sk.webauth.model;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -23,4 +27,7 @@ public class SecretKeyModel {
     private String email;
 
     private String password;
+
+    @Size(max = 20)
+    private List<@Valid DelegationTableModel> delegationTableModel;
 }

@@ -15,7 +15,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.security.InvalidKeyException;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,20 +29,20 @@ public class TotpController {
 
     @PostMapping("/createAuth")
     @ResponseStatus(HttpStatus.CREATED)
-    public void createAuthorization(@Valid @RequestBody SecretKeyModel secretKeyModel, @RequestHeader("owner-email") String owner) {
+    public void createAuthorization(@Valid @RequestBody SecretKeyModel secretKeyModel, @RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId) {
 
         if (!StringUtils.hasLength(secretKeyModel.getSecretKey()))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Secret key Missing");
-        logger.info("Received request at /createAuth : {} by owner {}", secretKeyModel, owner);
-        totpCreatorService.addAuth(secretKeyModel, owner);
+        logger.info("Received request at /createAuth : {} by owner {} for requestId: {}", secretKeyModel, owner, requestId);
+        totpCreatorService.addAuth(secretKeyModel, owner, requestId);
     }
 
     @GetMapping("/getAll")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<List<GeneratedSecretKeyModel>> getAllSecrets(@RequestHeader("owner-email") String owner) throws InvalidKeyException {
-        List<GeneratedSecretKeyModel> generatedSecretKeyModelList = totpGeneratorService.getOTPAll(owner);
+    public ResponseEntity<List<GeneratedSecretKeyModel>> getAllSecrets(@RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId) {
+        List<GeneratedSecretKeyModel> generatedSecretKeyModelList = totpGeneratorService.getOTPAll(owner, requestId);
+        logger.info("Received request at /getAll : {} by owner {} for requestId: {}", generatedSecretKeyModelList, owner, requestId);
 
-        logger.info("Received request at /getAll : {} by owner {}", generatedSecretKeyModelList, owner);
 
         return new ResponseEntity<>(generatedSecretKeyModelList, HttpStatus.OK);
 
@@ -51,32 +50,32 @@ public class TotpController {
 
     @GetMapping("/get/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<GeneratedSecretKeyModel> getById(@PathVariable("id") String id, @RequestHeader("owner-email") String owner) throws InvalidKeyException {
-        Optional<GeneratedSecretKeyModel> generatedSecretKeyModelOptional = totpGeneratorService.getSecretKeyById(Integer.valueOf(id), owner);
+    public ResponseEntity<GeneratedSecretKeyModel> getById(@PathVariable("id") String id, @RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId) {
         logger.info("Received request at /get/ {} by owner {}", id, owner);
+        Optional<GeneratedSecretKeyModel> generatedSecretKeyModelOptional = totpGeneratorService.getSecretKeyById(Integer.valueOf(id), owner, requestId);
 
         if (generatedSecretKeyModelOptional.isEmpty()) {
-            logger.error("Id {} is not present in DB", id);
+            logger.error("Id {} is not present in DB for requestId: {}", id, requestId);
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
-        logger.info("Received request at /get/ {} : {}", id, generatedSecretKeyModelOptional.get());
+        logger.info("Received request at /get/ {} : {} for requestId: {}", id, generatedSecretKeyModelOptional.get(), requestId);
         return new ResponseEntity<>(generatedSecretKeyModelOptional.get(), HttpStatus.OK);
     }
 
     @PutMapping("/update/{id}")
     @ResponseStatus(HttpStatus.CREATED)
-    public void update(@PathVariable("id") String id, @Valid @RequestBody SecretKeyModel secretKeyModel, @RequestHeader("owner-email") String owner) throws InvalidKeyException {
+    public void update(@PathVariable("id") String id, @Valid @RequestBody SecretKeyModel secretKeyModel, @RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId) {
         if (!StringUtils.hasLength(id)) throw new NullPointerException("Id is null");
-        logger.info("Received request at /update/ {} : {} by email {}", id, secretKeyModel, owner);
+        logger.info("Received request at /update/ {} : {} by email {} for requestId: {}", id, secretKeyModel, owner, requestId);
 
-        totpGeneratorService.updateTOTP(Integer.valueOf(id), secretKeyModel, owner);
+        totpCreatorService.updateTOTP(Integer.valueOf(id), secretKeyModel, owner, requestId);
     }
 
     @DeleteMapping("/delete/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public void delete(@PathVariable("id") String id, @RequestHeader("owner-email") String owner) {
-        logger.info("Received request at /delete/ {} by email {}", id, owner);
-        totpGeneratorService.deleteTOTP(Integer.valueOf(id), owner);
+    public void delete(@PathVariable("id") String id, @RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId) {
+        logger.info("Received request at /delete/ {} by email {} for requestId: {}", id, owner, requestId);
+        totpGeneratorService.deleteTOTP(Integer.valueOf(id), owner, requestId);
     }
 
 }

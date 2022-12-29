@@ -1,10 +1,13 @@
 package com.sk.webauth.service;
 
 import com.eatthepath.otp.TimeBasedOneTimePasswordGenerator;
+import com.sk.webauth.dao.DelegationTable;
 import com.sk.webauth.dao.SecretKey;
+import com.sk.webauth.model.DelegationTableModel;
 import com.sk.webauth.model.GeneratedSecretKeyModel;
-import com.sk.webauth.model.SecretKeyModel;
+import com.sk.webauth.repository.DelegationTableRepository;
 import com.sk.webauth.repository.SecretKeyRepository;
+import com.sk.webauth.util.DelegationModelConverter;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.codec.binary.Base32;
 import org.slf4j.Logger;
@@ -37,6 +40,10 @@ public class TOTPGeneratorService {
     @Autowired
     private SecretKeyRepository secretKeyRepository;
 
+    @Autowired
+    private DelegationTableRepository delegationTableRepository;
+
+
     @PostConstruct
     public void init() throws NoSuchAlgorithmException {
         keyGenerator = KeyGenerator.getInstance(totp.getAlgorithm());
@@ -45,16 +52,26 @@ public class TOTPGeneratorService {
     }
 
 
-    public List<GeneratedSecretKeyModel> getOTPAll(String owner) {
-        Iterable<SecretKey> secretKeyDAOList = secretKeyRepository.findAll();
+    public List<GeneratedSecretKeyModel> getOTPAll(String owner, String requestId) {
+
+        List<SecretKey> secretKeyDAOList = new ArrayList<>();
+        if (superAdmins.contains(owner)) {
+            secretKeyRepository.findAll().forEach(e -> secretKeyDAOList.add(e));
+        } else {
+            secretKeyDAOList.addAll(secretKeyRepository.findByOwner(owner));
+
+            List<DelegationTable> delegationTableList = delegationTableRepository.findByEmail(owner);
+            secretKeyDAOList.addAll(delegationTableList.stream().map(DelegationTable::getSecretKey).toList());
+        }
         List<GeneratedSecretKeyModel> generatedSecretKeyModelList = new ArrayList<>();
         for (SecretKey secretKey : secretKeyDAOList) {
-            generatedSecretKeyModelList.add(modelMapper(owner, secretKey));
+            generatedSecretKeyModelList.add(modelMapper(owner, secretKey, true));
         }
+        logger.info("Owner: {} requested all TOTP for requestId: {}", owner, requestId);
         return generatedSecretKeyModelList;
     }
 
-    private GeneratedSecretKeyModel modelMapper(String owner, SecretKey secretKey) {
+    private GeneratedSecretKeyModel modelMapper(String owner, SecretKey secretKey, Boolean neglectDelegationTable) {
         GeneratedSecretKeyModel generatedSecretKeyModel = new GeneratedSecretKeyModel();
         generatedSecretKeyModel.setName(secretKey.getName());
         try {
@@ -67,34 +84,42 @@ public class TOTPGeneratorService {
         generatedSecretKeyModel.setUrl(secretKey.getUrl());
         generatedSecretKeyModel.setName(secretKey.getName());
         generatedSecretKeyModel.setPassword(secretKey.getPassword());
-        if (superAdmins.contains(owner)) generatedSecretKeyModel.setIsOwner(true);
-        else generatedSecretKeyModel.setIsOwner(owner.equalsIgnoreCase(secretKey.getOwner()));
+
+        List<DelegationTableModel> delegatedUserModel = DelegationModelConverter.getDelegatedUserModel(secretKey.getDelegationTableSet());
+        if (!neglectDelegationTable) {
+            generatedSecretKeyModel.addDelegationTable(delegatedUserModel);
+        }
+
+        if (superAdmins.contains(owner) || owner.equalsIgnoreCase(secretKey.getOwner())) {
+            generatedSecretKeyModel.setOwner(true);
+            generatedSecretKeyModel.setWriteUser(true);
+            return generatedSecretKeyModel;
+        }
+
+        generatedSecretKeyModel.setWriteUser(delegatedUserModel.parallelStream().filter(e -> e.getEmail().equalsIgnoreCase(owner)).anyMatch(DelegationTableModel::getIsWriteUser));
+
         return generatedSecretKeyModel;
     }
 
-    public Optional<GeneratedSecretKeyModel> getSecretKeyById(Integer id, String owner) {
+    public Optional<GeneratedSecretKeyModel> getSecretKeyById(Integer id, String owner, String requestId) {
         Optional<SecretKey> secretKeyOptional = secretKeyRepository.findById(id);
+        logger.info("Owner: {} requested TOTP of id {} for requestId: {}", owner, id, requestId);
         if (secretKeyOptional.isPresent()) {
             SecretKey secretKey = secretKeyOptional.get();
-            return Optional.of(modelMapper(owner, secretKey));
+            GeneratedSecretKeyModel generatedSecretKeyModel = modelMapper(owner, secretKey, false);
+            if (generatedSecretKeyModel.isWriteUser() || generatedSecretKeyModel.isOwner() || superAdmins.contains(owner.toLowerCase())) {
+                return Optional.of(generatedSecretKeyModel);
+            }
+            logger.error("email {} is forbidden to access id: {} for request id {}", owner, id, requestId);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, id + " forbidden");
         }
-        return Optional.<GeneratedSecretKeyModel>empty();
+        return Optional.empty();
     }
 
-    public void updateTOTP(Integer id, SecretKeyModel secretKeyModel, String owner) {
 
-        SecretKey secretKey = recordBelongsToOwner(id, owner);
-
-        secretKey.setName(secretKeyModel.getName());
-        secretKey.setSecretKey(secretKey.getSecretKey());
-        secretKey.setUrl(secretKeyModel.getUrl());
-        secretKey.setEmail(secretKeyModel.getEmail());
-        secretKey.setPassword(secretKeyModel.getPassword());
-        secretKeyRepository.save(secretKey);
-    }
-
-    public void deleteTOTP(Integer id, String owner) {
-        SecretKey secretKey = recordBelongsToOwner(id, owner);
+    public void deleteTOTP(Integer id, String owner, String requestId) {
+        SecretKey secretKey = recordBelongsToOwner(id, owner, requestId);
+        logger.info("owner {} deleted id {} for request id {}", owner, id, requestId);
         secretKeyRepository.delete(secretKey);
     }
 
@@ -112,17 +137,17 @@ public class TOTPGeneratorService {
         return OTP;
     }
 
-    private SecretKey recordBelongsToOwner(Integer id, String owner) {
+    private SecretKey recordBelongsToOwner(Integer id, String owner, String requestId) {
         Optional<SecretKey> secretKeyDAOOptional = secretKeyRepository.findById(id);
         if (secretKeyDAOOptional.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, id + " not found");
         }
         SecretKey secretKey = secretKeyDAOOptional.get();
         if (!secretKey.getOwner().equalsIgnoreCase(owner) && !superAdmins.contains(owner.toLowerCase())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Current user " + owner + " not allowed to update " + secretKey.getName());
+            logger.error("owner {} not allowed to delete id {} for request id {}", owner, id, requestId);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Current user " + owner + " not allowed to delete " + secretKey.getName());
         }
 
         return secretKey;
     }
-
 }

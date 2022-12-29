@@ -53,9 +53,16 @@ public class TOTPGeneratorService {
 
 
     public List<GeneratedSecretKeyModel> getOTPAll(String owner, String requestId) {
-        List<DelegationTable> delegationTableIterable = delegationTableRepository.findByEmail(owner);
-        Iterable<SecretKey> secretKeyDAOList = delegationTableIterable.stream().map(DelegationTable::getSecretKey).toList();
 
+        List<SecretKey> secretKeyDAOList = new ArrayList<>();
+        if (superAdmins.contains(owner)) {
+            secretKeyRepository.findAll().forEach(e -> secretKeyDAOList.add(e));
+        } else {
+            secretKeyDAOList.addAll(secretKeyRepository.findByOwner(owner));
+
+            List<DelegationTable> delegationTableList = delegationTableRepository.findByEmail(owner);
+            secretKeyDAOList.addAll(delegationTableList.stream().map(DelegationTable::getSecretKey).toList());
+        }
         List<GeneratedSecretKeyModel> generatedSecretKeyModelList = new ArrayList<>();
         for (SecretKey secretKey : secretKeyDAOList) {
             generatedSecretKeyModelList.add(modelMapper(owner, secretKey, true));

@@ -52,10 +52,10 @@ public class TOTPGeneratorService {
     }
 
 
-    public List<GeneratedSecretKeyModel> getOTPAll(String owner, String requestId, boolean isBackup) {
+    public List<GeneratedSecretKeyModel> getOTPAll(String owner, String requestId) {
 
         List<SecretKey> secretKeyDAOList = new ArrayList<>();
-        if (superAdmins.contains(owner) || isBackup) {
+        if (superAdmins.contains(owner)) {
             secretKeyRepository.findAll().forEach(e -> secretKeyDAOList.add(e));
         } else {
             secretKeyDAOList.addAll(secretKeyRepository.findByOwner(owner));

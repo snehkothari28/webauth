@@ -1,6 +1,5 @@
 package com.sk.webauth.config;
 
-import com.sk.webauth.model.GeneratedSecretKeyModel;
 import com.sk.webauth.service.BackupCsvGenerator;
 import com.sk.webauth.service.TOTPGeneratorService;
 import org.slf4j.Logger;
@@ -11,7 +10,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableScheduling
@@ -32,10 +30,14 @@ public class BackupScheduler {
     public void backup() {
         log.info("Starting backup service");
         try {
-            List<GeneratedSecretKeyModel> generatedSecretKeyModelList = totpGeneratorService.getOTPAll(BACKUP_SCHEDULER, "backupService", true);
-            String timestamp = backupCsvGenerator.createCSV(generatedSecretKeyModelList);
 
-            log.info("Successfully backup at " + timestamp);
+            String timestamp = backupCsvGenerator.startSecretKeyBackup();
+
+            log.info("Successfully backup SecretKey at " + timestamp);
+
+            timestamp = backupCsvGenerator.startDelegationTableBackup();
+
+            log.info("Successfully backup DelegationTable at " + timestamp);
 
         } catch (Exception e) {
             log.error("Failed backing up with stacktrace:");

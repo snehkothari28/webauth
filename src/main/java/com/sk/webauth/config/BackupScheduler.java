@@ -32,7 +32,7 @@ public class BackupScheduler {
     public void backup() {
         log.info("Starting backup service");
         try {
-            List<GeneratedSecretKeyModel> generatedSecretKeyModelList = totpGeneratorService.getOTPAll(BACKUP_SCHEDULER, "backupService");
+            List<GeneratedSecretKeyModel> generatedSecretKeyModelList = totpGeneratorService.getOTPAll(BACKUP_SCHEDULER, "backupService", true);
             String timestamp = backupCsvGenerator.createCSV(generatedSecretKeyModelList);
 
             log.info("Successfully backup at " + timestamp);

@@ -56,7 +56,7 @@ public class TOTPGeneratorService {
 
         List<SecretKey> secretKeyDAOList = new ArrayList<>();
         if (superAdmins.contains(owner)) {
-            secretKeyRepository.findAll().forEach(e -> secretKeyDAOList.add(e));
+            secretKeyRepository.findAll().forEach(secretKeyDAOList::add);
         } else {
             secretKeyDAOList.addAll(secretKeyRepository.findByOwner(owner));
 
@@ -80,6 +80,7 @@ public class TOTPGeneratorService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Not able to decode secret of " + secretKey.getName());
         }
         generatedSecretKeyModel.setId(secretKey.getId());
+        generatedSecretKeyModel.setType(secretKey.getType());
         generatedSecretKeyModel.setEmail(secretKey.getEmail());
         generatedSecretKeyModel.setUrl(secretKey.getUrl());
         generatedSecretKeyModel.setName(secretKey.getName());

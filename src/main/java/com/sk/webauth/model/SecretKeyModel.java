@@ -21,6 +21,7 @@ public class SecretKeyModel {
     private String name;
 
     private String secretKey;
+    @NotNull
     private TypeField type;
 
     private String url;

@@ -35,6 +35,7 @@ public class TOTPCreatorService {
         SecretKey secretKey = new SecretKey();
         secretKey.setName(secretKeyModel.getName());
         secretKey.setSecretKey(secretKeyModel.getSecretKey());
+        secretKey.setType(secretKeyModel.getType());
         secretKey.setOwner(owner);
         secretKey.setUrl(secretKeyModel.getUrl());
         secretKey.setEmail(secretKeyModel.getEmail());
@@ -67,6 +68,7 @@ public class TOTPCreatorService {
 
         secretKey.setName(secretKeyModel.getName());
         secretKey.setUrl(secretKeyModel.getUrl());
+        secretKey.setType(secretKeyModel.getType());
         secretKey.setEmail(secretKeyModel.getEmail());
         secretKey.setPassword(secretKeyModel.getPassword());
         Set<DelegationTable> delegationTables;

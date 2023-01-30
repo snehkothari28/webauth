@@ -1,5 +1,6 @@
 package com.sk.webauth.dao;
 
+import com.sk.webauth.model.NewType;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -37,6 +38,10 @@ public class SecretKey {
     @Column(name = "url")
     private String url;
 
+    @Column(name = "type")
+    @Enumerated(EnumType.STRING)
+    private NewType type;
+
     @Column(name = "email")
     private String email;
 
@@ -67,6 +72,7 @@ public class SecretKey {
                 ", secretKey='" + secretKey + '\'' +
                 ", owner='" + owner + '\'' +
                 ", url='" + url + '\'' +
+                ", type='" + type + '\'' +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
                 ", delegationTableList=" + delegationTableSet +

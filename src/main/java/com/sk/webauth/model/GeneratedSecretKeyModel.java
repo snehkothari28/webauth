@@ -12,6 +12,7 @@ public class GeneratedSecretKeyModel {
     private Integer id;
     private String name;
     private String secret;
+    private TypeField type;
     private String url;
 
     private String email;

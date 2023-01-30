@@ -28,6 +28,8 @@ public class SecretKeyModel {
 
     private String password;
 
+    private NewType type;
+
     @Size(max = 20)
     private List<@Valid DelegationTableModel> delegationTableModel;
 }

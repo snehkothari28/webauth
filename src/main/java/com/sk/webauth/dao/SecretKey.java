@@ -1,5 +1,6 @@
 package com.sk.webauth.dao;
 
+import com.sk.webauth.model.NewType;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -43,6 +44,10 @@ public class SecretKey {
     @Column(name = "password")
     private String password;
 
+    @Column(name = "type")
+    @Enumerated(EnumType.STRING)
+    private NewType type;
+
     @OneToMany(mappedBy = "secretKey", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<@Valid DelegationTable> delegationTableSet;
 
@@ -69,6 +74,7 @@ public class SecretKey {
                 ", url='" + url + '\'' +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
+                ", type='" + type + '\'' +
                 ", delegationTableList=" + delegationTableSet +
                 '}';
     }

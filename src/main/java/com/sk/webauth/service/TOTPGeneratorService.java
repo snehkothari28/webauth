@@ -56,7 +56,7 @@ public class TOTPGeneratorService {
 
         List<SecretKey> secretKeyDAOList = new ArrayList<>();
         if (superAdmins.contains(owner)) {
-            secretKeyRepository.findAll().forEach(e -> secretKeyDAOList.add(e));
+            secretKeyRepository.findAll().forEach(secretKeyDAOList::add);
         } else {
             secretKeyDAOList.addAll(secretKeyRepository.findByOwner(owner));
 
@@ -84,6 +84,7 @@ public class TOTPGeneratorService {
         generatedSecretKeyModel.setUrl(secretKey.getUrl());
         generatedSecretKeyModel.setName(secretKey.getName());
         generatedSecretKeyModel.setPassword(secretKey.getPassword());
+        generatedSecretKeyModel.setType(secretKey.getType());
 
         List<DelegationTableModel> delegatedUserModel = DelegationModelConverter.getDelegatedUserModel(secretKey.getDelegationTableSet());
         if (!neglectDelegationTable) {

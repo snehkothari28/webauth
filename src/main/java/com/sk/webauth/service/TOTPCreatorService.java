@@ -39,6 +39,7 @@ public class TOTPCreatorService {
         secretKey.setUrl(secretKeyModel.getUrl());
         secretKey.setEmail(secretKeyModel.getEmail());
         secretKey.setPassword(secretKeyModel.getPassword());
+        secretKey.setType(secretKeyModel.getType());
         Set<DelegationTable> delegationTables = addToDelegationTable(new HashSet<>(), secretKeyModel.getDelegationTableModel(), secretKey, true);
 
         secretKey.setDelegationTableSet(delegationTables);
@@ -69,6 +70,7 @@ public class TOTPCreatorService {
         secretKey.setUrl(secretKeyModel.getUrl());
         secretKey.setEmail(secretKeyModel.getEmail());
         secretKey.setPassword(secretKeyModel.getPassword());
+        secretKey.setType(secretKeyModel.getType());
         Set<DelegationTable> delegationTables;
         if (secretKey.getOwner().equalsIgnoreCase(owner) || superAdmins.contains(owner.toLowerCase())) {
             delegationTables = addToDelegationTable(secretKey.getDelegationTableSet(), secretKeyModel.getDelegationTableModel(), secretKey, true);

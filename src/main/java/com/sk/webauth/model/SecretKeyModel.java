@@ -28,6 +28,7 @@ public class SecretKeyModel {
 
     private String password;
 
+    @NotNull
     private NewType type;
 
     @Size(max = 20)

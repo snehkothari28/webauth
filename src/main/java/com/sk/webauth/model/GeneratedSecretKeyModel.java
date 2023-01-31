@@ -14,6 +14,8 @@ public class GeneratedSecretKeyModel {
     private String secret;
     private String url;
 
+    private NewType type;
+
     private String email;
     private String password;
 

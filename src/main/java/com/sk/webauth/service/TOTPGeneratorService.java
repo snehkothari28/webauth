@@ -81,6 +81,7 @@ public class TOTPGeneratorService {
         }
         generatedSecretKeyModel.setId(secretKey.getId());
         generatedSecretKeyModel.setEmail(secretKey.getEmail());
+        generatedSecretKeyModel.setType(secretKey.getType());
         generatedSecretKeyModel.setUrl(secretKey.getUrl());
         generatedSecretKeyModel.setName(secretKey.getName());
         generatedSecretKeyModel.setPassword(secretKey.getPassword());

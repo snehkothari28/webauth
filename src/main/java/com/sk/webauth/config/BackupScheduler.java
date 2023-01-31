@@ -30,14 +30,14 @@ public class BackupScheduler {
     public void backup() {
         log.info("Starting backup service");
         try {
-
-            String timestamp = backupCsvGenerator.startSecretKeyBackup();
-
-            log.info("Successfully backup SecretKey at " + timestamp);
-
-            timestamp = backupCsvGenerator.startDelegationTableBackup();
-
-            log.info("Successfully backup DelegationTable at " + timestamp);
+//
+//            String timestamp = backupCsvGenerator.startSecretKeyBackup();
+//
+//            log.info("Successfully backup SecretKey at " + timestamp);
+//
+//            timestamp = backupCsvGenerator.startDelegationTableBackup();
+//
+//            log.info("Successfully backup DelegationTable at " + timestamp);
 
         } catch (Exception e) {
             log.error("Failed backing up with stacktrace:");

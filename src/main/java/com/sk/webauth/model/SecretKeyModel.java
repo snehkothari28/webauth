@@ -34,7 +34,8 @@ public class SecretKeyModel {
     private String password;
 
     @NotNull
-    private Type type;
+//    private Type type;
+    private String type;
 
     @Size(max = 20)
     private List<@Valid DelegationTableModel> delegationTableModel;

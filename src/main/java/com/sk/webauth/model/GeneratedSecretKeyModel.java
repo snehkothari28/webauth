@@ -17,7 +17,8 @@ public class GeneratedSecretKeyModel {
     private String email;
     private String password;
 
-    private Type type;
+//    private Type type;
+    private String type;
 
     private boolean isOwner;
 

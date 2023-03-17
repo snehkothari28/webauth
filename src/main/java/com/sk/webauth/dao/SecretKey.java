@@ -1,6 +1,5 @@
 package com.sk.webauth.dao;
 
-import com.sk.webauth.model.Type;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

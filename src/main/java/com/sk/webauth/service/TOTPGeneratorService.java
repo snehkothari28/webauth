@@ -25,9 +25,7 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class TOTPGeneratorService {
@@ -122,6 +120,22 @@ public class TOTPGeneratorService {
         SecretKey secretKey = recordBelongsToOwner(id, owner, requestId);
         logger.info("owner {} deleted id {} for request id {}", owner, id, requestId);
         secretKeyRepository.delete(secretKey);
+    }
+
+    public Set<String> getTypes() {
+        List<String> types = secretKeyRepository.findAllType();
+        Set<String> uniqueTypes = new HashSet<>();
+        types.forEach((type) -> {
+            boolean exists = false;
+            for (String setType : uniqueTypes) {
+                if (setType.equalsIgnoreCase(type)) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) uniqueTypes.add(type);
+        });
+        return uniqueTypes;
     }
 
     private String decodeOTP(String encodedKey) throws InvalidKeyException {

@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 public class TotpController {
@@ -76,6 +77,13 @@ public class TotpController {
     public void delete(@PathVariable("id") String id, @RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId) {
         logger.info("Received request at /delete/ {} by email {} for requestId: {}", id, owner, requestId);
         totpGeneratorService.deleteTOTP(Integer.valueOf(id), owner, requestId);
+    }
+
+    @GetMapping("/types")
+    @ResponseStatus(HttpStatus.OK)
+    public Set<String> getTypes(@RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId){
+        logger.info("Received request at /types by email {} for requestId: {}", owner, requestId);
+        return totpGeneratorService.getTypes();
     }
 
 }

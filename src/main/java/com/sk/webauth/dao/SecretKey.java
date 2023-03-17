@@ -45,9 +45,7 @@ public class SecretKey {
     private String password;
 
     @Column(name = "type")
-    @Enumerated(EnumType.STRING)
-    private Type type;
-
+     private String type;
     @OneToMany(mappedBy = "secretKey", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<@Valid DelegationTable> delegationTableSet;
 

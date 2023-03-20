@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.crypto.KeyGenerator;
@@ -128,7 +129,7 @@ public class TOTPGeneratorService {
         types.forEach((type) -> {
             boolean exists = false;
             for (String setType : uniqueTypes) {
-                if (setType.equalsIgnoreCase(type)) {
+                if (StringUtils.hasLength(type) && setType.equalsIgnoreCase(type)) {
                     exists = true;
                     break;
                 }

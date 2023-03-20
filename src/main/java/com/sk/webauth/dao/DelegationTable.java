@@ -34,7 +34,7 @@ public class DelegationTable {
 
     @ManyToOne
     @JoinColumn(name = "secretKeyId")
-    @Length(max = 200)
+
     private SecretKey secretKey;
 
     @Override

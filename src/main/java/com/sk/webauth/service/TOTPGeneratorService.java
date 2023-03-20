@@ -127,14 +127,16 @@ public class TOTPGeneratorService {
         List<String> types = secretKeyRepository.findAllType();
         Set<String> uniqueTypes = new HashSet<>();
         types.forEach((type) -> {
-            boolean exists = false;
-            for (String setType : uniqueTypes) {
-                if (StringUtils.hasLength(setType) && setType.equalsIgnoreCase(type)) {
-                    exists = true;
-                    break;
+            if (StringUtils.hasLength(type)) {
+                boolean exists = false;
+                for (String setType : uniqueTypes) {
+                    if (setType.equalsIgnoreCase(type)) {
+                        exists = true;
+                        break;
+                    }
                 }
+                if (!exists) uniqueTypes.add(type);
             }
-            if (!exists) uniqueTypes.add(type);
         });
         return uniqueTypes;
     }

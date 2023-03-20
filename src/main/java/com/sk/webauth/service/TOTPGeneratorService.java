@@ -129,7 +129,7 @@ public class TOTPGeneratorService {
         types.forEach((type) -> {
             boolean exists = false;
             for (String setType : uniqueTypes) {
-                if (StringUtils.hasLength(type) && setType.equalsIgnoreCase(type)) {
+                if (StringUtils.hasLength(setType) && setType.equalsIgnoreCase(type)) {
                     exists = true;
                     break;
                 }

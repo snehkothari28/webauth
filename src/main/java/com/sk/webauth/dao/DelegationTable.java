@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.hibernate.validator.constraints.Length;
 
 import java.util.Objects;
 
@@ -25,6 +26,7 @@ public class DelegationTable {
     @NotNull
     @NotBlank
     @EmailConstraint()
+    @Length(max=90)
     private String email;
     @Column(name = "isWriteUser")
     @NotNull
@@ -32,6 +34,7 @@ public class DelegationTable {
 
     @ManyToOne
     @JoinColumn(name = "secretKeyId")
+
     private SecretKey secretKey;
 
     @Override

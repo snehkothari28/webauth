@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
@@ -44,7 +45,17 @@ public class SecretKey {
     private String password;
 
     @Column(name = "type")
-     private String type;
+    private String type;
+
+    @Column(name = "deleted")
+    private Boolean deleted = false;
+
+    @Column(name = "deletedBy")
+    private String deletedBy;
+
+    @Column(name = "deletedAt")
+    private LocalDateTime deletedAt;
+
     @OneToMany(mappedBy = "secretKey", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<@Valid DelegationTable> delegationTableSet;
 
@@ -72,6 +83,9 @@ public class SecretKey {
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
                 ", type='" + type + '\'' +
+                ", deleted='" + deleted + '\'' +
+                ", deletedAt='" + deletedAt + '\'' +
+                ", deletedBy='" + deletedBy + '\'' +
                 ", delegationTableList=" + delegationTableSet +
                 '}';
     }

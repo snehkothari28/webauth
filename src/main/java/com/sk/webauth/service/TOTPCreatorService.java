@@ -40,6 +40,9 @@ public class TOTPCreatorService {
         secretKey.setEmail(secretKeyModel.getEmail());
         secretKey.setPassword(secretKeyModel.getPassword());
         secretKey.setType(secretKeyModel.getType());
+        secretKey.setDeleted(secretKeyModel.getDeleted());
+        secretKey.setDeletedBy(secretKeyModel.getDeletedBy());
+        secretKey.setDeletedAt(secretKeyModel.getDeletedAt());
         Set<DelegationTable> delegationTables = addToDelegationTable(new HashSet<>(), secretKeyModel.getDelegationTableModel(), secretKey, true);
 
         secretKey.setDelegationTableSet(delegationTables);

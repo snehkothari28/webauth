@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -35,6 +36,14 @@ public class SecretKeyModel {
 
     @NotNull
     private String type;
+
+    private Boolean deleted = false;
+
+    private String deletedBy;
+
+    private LocalDateTime deletedAt;
+
+    private boolean isDeleted;
 
     @Size(max = 20)
     private List<@Valid DelegationTableModel> delegationTableModel;

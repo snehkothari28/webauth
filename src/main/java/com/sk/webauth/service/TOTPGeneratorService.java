@@ -26,6 +26,7 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -64,7 +65,8 @@ public class TOTPGeneratorService {
         }
         List<GeneratedSecretKeyModel> generatedSecretKeyModelList = new ArrayList<>();
         for (SecretKey secretKey : secretKeyDAOList) {
-            generatedSecretKeyModelList.add(modelMapper(owner, secretKey, true));
+            if (secretKey.getDeleted() == null || !secretKey.getDeleted())
+                generatedSecretKeyModelList.add(modelMapper(owner, secretKey, true));
         }
         logger.info("Owner: {} requested all TOTP for requestId: {}", owner, requestId);
         return generatedSecretKeyModelList;
@@ -84,6 +86,9 @@ public class TOTPGeneratorService {
         generatedSecretKeyModel.setName(secretKey.getName());
         generatedSecretKeyModel.setPassword(secretKey.getPassword());
         generatedSecretKeyModel.setType(secretKey.getType());
+        generatedSecretKeyModel.setDeleted(secretKey.getDeleted());
+        generatedSecretKeyModel.setDeletedBy(secretKey.getDeletedBy());
+        generatedSecretKeyModel.setDeletedAt(secretKey.getDeletedAt());
 
         List<DelegationTableModel> delegatedUserModel = DelegationModelConverter.getDelegatedUserModel(secretKey.getDelegationTableSet());
         if (!neglectDelegationTable) {
@@ -120,7 +125,53 @@ public class TOTPGeneratorService {
     public void deleteTOTP(Integer id, String owner, String requestId) {
         SecretKey secretKey = recordBelongsToOwner(id, owner, requestId);
         logger.info("owner {} deleted id {} for request id {}", owner, id, requestId);
-        secretKeyRepository.delete(secretKey);
+        secretKey.setDeleted(true);
+        secretKey.setDeletedBy(owner);
+        secretKey.setDeletedAt(LocalDateTime.now());
+        secretKeyRepository.save(secretKey);
+    }
+
+    public List<GeneratedSecretKeyModel> getDeletedRecords(String owner, String requestId)
+    {
+        if(superAdmins.contains(owner))
+        {
+            List<SecretKey> deletedSecretKeys = secretKeyRepository.findByDeleted(true);
+            List<GeneratedSecretKeyModel> generatedSecretKeyModelList = new ArrayList<>();
+            for(SecretKey secretKey : deletedSecretKeys)
+            {
+                GeneratedSecretKeyModel generatedSecretKeyModel = modelMapper(owner, secretKey, false);
+                generatedSecretKeyModel.setDeletedBy(secretKey.getDeletedBy());
+                generatedSecretKeyModel.setDeletedAt(secretKey.getDeletedAt());
+                generatedSecretKeyModelList.add(generatedSecretKeyModel);
+            }
+            logger.info("Owner {} requested all deleted TOTP for request id {}",owner,requestId);
+            return generatedSecretKeyModelList;
+        }
+        else {
+            logger.error("User {} not authorized to access deleted records for request id {}", owner, requestId);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"User not found");
+        }
+    }
+
+    public void restoreDeletedRecords(Integer id, String owner, String requestId) {
+        if(superAdmins.contains(owner)) {
+            Optional<SecretKey> key = secretKeyRepository.findById(id);
+            if (key.isPresent()) {
+                SecretKey secretKey = key.get();
+                secretKey.setDeleted(false);
+                secretKey.setDeletedBy(null);
+                secretKey.setDeletedAt(null);
+                secretKeyRepository.save(secretKey);
+
+                logger.info("Owner {} restored TOTP with id {} for request id {}", owner, id, requestId);
+            } else {
+                logger.error("Secret key with id {} not found for request id {}", id, requestId);
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Secret key not found");
+            }
+        } else {
+            logger.error("User {} not authorized to restore deleted records for request id {}", owner, requestId);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"User not found");
+        }
     }
 
     public Set<String> getTypes() {
@@ -168,4 +219,5 @@ public class TOTPGeneratorService {
 
         return secretKey;
     }
+
 }

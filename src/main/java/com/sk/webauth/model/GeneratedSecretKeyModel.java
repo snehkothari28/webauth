@@ -17,6 +17,8 @@ public class GeneratedSecretKeyModel {
     private String email;
     private String password;
 
+    private String type;
+
     private boolean isOwner;
 
     @Setter(AccessLevel.NONE)

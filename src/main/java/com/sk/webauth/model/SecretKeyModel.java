@@ -18,15 +18,23 @@ public class SecretKeyModel {
 
     @NotEmpty
     @NotNull
+
+    @Size(max = 90)
     private String name;
 
+    @Size(max=200)
     private String secretKey;
-
+    @Size(max=90)
     private String url;
 
+    @Size(max=90)
     private String email;
 
+    @Size(max =90)
     private String password;
+
+    @NotNull
+    private String type;
 
     @Size(max = 20)
     private List<@Valid DelegationTableModel> delegationTableModel;

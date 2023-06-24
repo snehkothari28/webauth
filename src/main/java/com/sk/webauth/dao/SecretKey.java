@@ -43,6 +43,8 @@ public class SecretKey {
     @Column(name = "password")
     private String password;
 
+    @Column(name = "type")
+     private String type;
     @OneToMany(mappedBy = "secretKey", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<@Valid DelegationTable> delegationTableSet;
 
@@ -69,6 +71,7 @@ public class SecretKey {
                 ", url='" + url + '\'' +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
+                ", type='" + type + '\'' +
                 ", delegationTableList=" + delegationTableSet +
                 '}';
     }

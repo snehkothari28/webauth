@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.crypto.KeyGenerator;
@@ -25,9 +26,7 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class TOTPGeneratorService {
@@ -56,7 +55,7 @@ public class TOTPGeneratorService {
 
         List<SecretKey> secretKeyDAOList = new ArrayList<>();
         if (superAdmins.contains(owner)) {
-            secretKeyRepository.findAll().forEach(e -> secretKeyDAOList.add(e));
+            secretKeyRepository.findAll().forEach(secretKeyDAOList::add);
         } else {
             secretKeyDAOList.addAll(secretKeyRepository.findByOwner(owner));
 
@@ -84,6 +83,7 @@ public class TOTPGeneratorService {
         generatedSecretKeyModel.setUrl(secretKey.getUrl());
         generatedSecretKeyModel.setName(secretKey.getName());
         generatedSecretKeyModel.setPassword(secretKey.getPassword());
+        generatedSecretKeyModel.setType(secretKey.getType());
 
         List<DelegationTableModel> delegatedUserModel = DelegationModelConverter.getDelegatedUserModel(secretKey.getDelegationTableSet());
         if (!neglectDelegationTable) {
@@ -121,6 +121,24 @@ public class TOTPGeneratorService {
         SecretKey secretKey = recordBelongsToOwner(id, owner, requestId);
         logger.info("owner {} deleted id {} for request id {}", owner, id, requestId);
         secretKeyRepository.delete(secretKey);
+    }
+
+    public Set<String> getTypes() {
+        List<String> types = secretKeyRepository.findAllType();
+        Set<String> uniqueTypes = new HashSet<>();
+        types.forEach((type) -> {
+            if (StringUtils.hasLength(type)) {
+                boolean exists = false;
+                for (String setType : uniqueTypes) {
+                    if (setType.equalsIgnoreCase(type)) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) uniqueTypes.add(type);
+            }
+        });
+        return uniqueTypes;
     }
 
     private String decodeOTP(String encodedKey) throws InvalidKeyException {

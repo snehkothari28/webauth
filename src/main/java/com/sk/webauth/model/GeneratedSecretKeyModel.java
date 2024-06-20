@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +21,12 @@ public class GeneratedSecretKeyModel {
     private String type;
 
     private boolean isOwner;
+
+    private Boolean deleted=false;
+
+    private String deletedBy;
+
+    private LocalDateTime deletedAt;
 
     @Setter(AccessLevel.NONE)
     private List<DelegationTableModel> delegationTable;

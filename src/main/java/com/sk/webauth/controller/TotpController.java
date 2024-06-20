@@ -43,8 +43,6 @@ public class TotpController {
     public ResponseEntity<List<GeneratedSecretKeyModel>> getAllSecrets(@RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId) {
         List<GeneratedSecretKeyModel> generatedSecretKeyModelList = totpGeneratorService.getOTPAll(owner, requestId);
         logger.info("Received request at /getAll : {} by owner {} for requestId: {}", generatedSecretKeyModelList, owner, requestId);
-
-
         return new ResponseEntity<>(generatedSecretKeyModelList, HttpStatus.OK);
 
     }
@@ -84,6 +82,22 @@ public class TotpController {
     public Set<String> getTypes(@RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId){
         logger.info("Received request at /types by email {} for requestId: {}", owner, requestId);
         return totpGeneratorService.getTypes();
+    }
+
+    @GetMapping("/deletedRecords")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<List<GeneratedSecretKeyModel>> getDeletedRecords(@RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId)
+    {
+        logger.info("Received request at /deletedRecords by email {} for requestId: {}", owner, requestId);
+        List<GeneratedSecretKeyModel> deleted = totpGeneratorService.getDeletedRecords(owner,requestId);
+        return new ResponseEntity<>(deleted,HttpStatus.OK);
+    }
+    @GetMapping("/restoredRecords/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void getRestoredRecords(@PathVariable("id") Integer id,@RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId)
+    {
+        logger.info("Received request at /restoredRecords/{} by email {} for requestId: {}", id, owner, requestId);
+        totpGeneratorService.restoreDeletedRecords(id, owner,requestId);
     }
 
 }

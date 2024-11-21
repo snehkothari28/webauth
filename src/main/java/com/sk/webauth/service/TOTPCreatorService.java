@@ -6,12 +6,14 @@ import com.sk.webauth.model.DelegationTableModel;
 import com.sk.webauth.model.SecretKeyModel;
 import com.sk.webauth.repository.DelegationTableRepository;
 import com.sk.webauth.repository.SecretKeyRepository;
+import org.apache.commons.codec.binary.Base32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
@@ -30,8 +32,14 @@ public class TOTPCreatorService {
     @Value("#{'${web.auth.super.admins}'.toLowerCase().split(',')}")
     private List<String> superAdmins;
 
+    private final Base32 base32 = new Base32();
+
     public void addAuth(SecretKeyModel secretKeyModel, String owner, String requestId) {
 
+        String secret = secretKeyModel.getSecretKey();
+        if (!StringUtils.hasLength(secret) || base32.decode(secret).length == 0) {
+            throw new ResponseStatusException(HttpStatus.CREATED, "Invalid secret key");
+        }
         SecretKey secretKey = new SecretKey();
         secretKey.setName(secretKeyModel.getName());
         secretKey.setSecretKey(secretKeyModel.getSecretKey());

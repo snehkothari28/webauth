@@ -149,9 +149,12 @@ public class TOTPGeneratorService {
         // length in _bytes,_ KeyGenerator#init(int) takes a key length in _bits._
         Instant now = Instant.now();
         byte[] decodedKey = base32.decode(encodedKey);
+        if (decodedKey.length == 0) {
+            return "";
+        }
         Key key = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
         String OTP = totp.generateOneTimePasswordString(key, now);
-        logger.info("OTP {} for secretKey {} ", OTP, encodedKey);
+//        logger.info("OTP {} for secretKey {} ", OTP, encodedKey);
         return OTP;
     }
 

@@ -12,6 +12,7 @@
 
     <springProfile name="server">
 
+        <!-- Appender for general logs -->
         <appender name="FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>app.log</file>
 
@@ -26,15 +27,47 @@
             </rollingPolicy>
 
             <encoder>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
+                <!-- Prepend timestamp to each line of multi-line logs -->
+                <pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5level] - %msg%n%replace(%ex{full}){'\\n', '\\n%d{yyyy-MM-dd HH:mm:ss} '}%n</pattern>
             </encoder>
         </appender>
 
+        <!-- Appender for error logs -->
+        <appender name="ERROR-FILE-ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>error.log</file>
+
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>logs/error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <!-- each archived file, size max 10MB -->
+                <maxFileSize>1GB</maxFileSize>
+                <!-- total size of all archive files, if total size > 5GB, it will delete old archived file -->
+                <totalSizeCap>5GB</totalSizeCap>
+                <!-- 30 days to keep -->
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+
+            <encoder>
+                <!-- Prepend timestamp to each line of multi-line logs -->
+                <pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5level] - %msg%n%replace(%ex{full}){'\\n', '\\n%d{yyyy-MM-dd HH:mm:ss} '}%n</pattern>
+            </encoder>
+        </appender>
+
+        <!-- Logger for Spring Framework -->
         <logger name="org.springframework" level="INFO"/>
-        <logger name="com.sk" level="DEBUG"/>
+
+        <!-- Logger for custom packages -->
+        <logger name="com.sk" level="INFO"/>
+
+        <!-- Root logger for general logs -->
         <root level="WARN">
             <appender-ref ref="FILE-ROLLING"/>
         </root>
+
+        <!-- Root logger for error logs -->
+        <root level="ERROR">
+            <appender-ref ref="ERROR-FILE-ROLLING"/>
+        </root>
+
     </springProfile>
 
 </configuration>

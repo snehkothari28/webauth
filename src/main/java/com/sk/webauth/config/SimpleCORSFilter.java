@@ -11,13 +11,16 @@ import org.apache.http.auth.AuthenticationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 
 import static java.util.Collections.enumeration;
 
@@ -25,15 +28,24 @@ import static java.util.Collections.enumeration;
 public class SimpleCORSFilter extends OncePerRequestFilter {
 
     public static final String OWNER_EMAIL = "owner-email";
+    public static final String IS_ADMIN = "Is-Admin";
     private final Logger log = LoggerFactory.getLogger(SimpleCORSFilter.class);
 //    @Value("${allow.origin.headers}")
 //    private String allowedOrigin;
+
+    @Value("${web.auth.super.admins}")
+    private String admin;
 
     @Autowired
     private AuthenticationService authenticationService;
 
     public SimpleCORSFilter() {
         log.info("SimpleCORSFilter init");
+    }
+
+    public boolean checkIfAdmin(String email) {
+        List<String> admins = Arrays.asList(admin.split(","));
+        return admins.contains(email);
     }
 
     private static void addResponseHeaders(HttpServletResponse res, String incomingRequestOrigin, String requestId) {
@@ -96,15 +108,20 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
     }
 
     private HttpServletRequestWrapper addOwnerRequest(HttpServletRequest request, String owner) {
+        boolean isAdmin = checkIfAdmin(owner);
         return new HttpServletRequestWrapper(request) {
             @Override
             public Enumeration<String> getHeaders(String name) {
-                if (OWNER_EMAIL.equals(name)) return enumeration(Collections.singleton(owner));
-                return super.getHeaders(name);
+                if (OWNER_EMAIL.equals(name)) {
+                    return enumeration(Collections.singleton(owner));
+                } else if (IS_ADMIN.equals(name)) {
+                    return enumeration(Collections.singleton(Boolean.toString(isAdmin)));
+                } else {
+                    return super.getHeaders(name);
+                }
             }
         };
     }
-
     @Override
     public void destroy() {
     }

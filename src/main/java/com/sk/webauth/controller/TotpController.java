@@ -42,8 +42,7 @@ public class TotpController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<List<GeneratedSecretKeyModel>> getAllSecrets(@RequestHeader("owner-email") String owner, @RequestHeader("requestId") String requestId) {
         List<GeneratedSecretKeyModel> generatedSecretKeyModelList = totpGeneratorService.getOTPAll(owner, requestId);
-        logger.info("Received request at /getAll : {} by owner {} for requestId: {}", generatedSecretKeyModelList, owner, requestId);
-
+        logger.info("Received request at /getAll : by owner {} for requestId: {}",  owner, requestId);
 
         return new ResponseEntity<>(generatedSecretKeyModelList, HttpStatus.OK);
 

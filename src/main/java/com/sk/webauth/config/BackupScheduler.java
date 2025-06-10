@@ -5,6 +5,7 @@ import com.sk.webauth.service.TOTPGeneratorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,26 +23,31 @@ public class BackupScheduler {
     @Autowired
     private BackupCsvGenerator backupCsvGenerator;
 
+    @Value("${web.auth.backup.disable:false}")
+    private boolean disableBackup;
+
     @Scheduled(cron = "${web.auth.backup.cron}")
     public void backupCronJob() {
         backup();
     }
 
     public void backup() {
-        log.info("Starting backup service");
-        try {
+        if (!disableBackup) {
+            log.info("Starting backup service");
+            try {
 
-            String timestamp = backupCsvGenerator.startSecretKeyBackup();
+                String timestamp = backupCsvGenerator.startSecretKeyBackup();
 
-            log.info("Successfully backup SecretKey at " + timestamp);
+                log.info("Successfully backup SecretKey at " + timestamp);
 
-            timestamp = backupCsvGenerator.startDelegationTableBackup();
+                timestamp = backupCsvGenerator.startDelegationTableBackup();
 
-            log.info("Successfully backup DelegationTable at " + timestamp);
+                log.info("Successfully backup DelegationTable at " + timestamp);
 
-        } catch (Exception e) {
-            log.error("Failed backing up with stacktrace:");
-            log.error(Arrays.toString(e.getStackTrace()));
+            } catch (Exception e) {
+                log.error("Failed backing up with stacktrace:");
+                log.error(Arrays.toString(e.getStackTrace()));
+            }
         }
     }
 }

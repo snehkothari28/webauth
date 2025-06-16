@@ -57,6 +57,7 @@
 
         <!-- Logger for custom packages -->
         <logger name="com.sk" level="INFO"/>
+        <logger name="logging.level.org.springframework.core.env" level="DEBUG"/>
 
         <!-- Root logger for general logs -->
         <root level="WARN">

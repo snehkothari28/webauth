@@ -78,7 +78,10 @@ public class SimpleCORSFilter extends OncePerRequestFilter {
             return;
         }
 
-        String requestId = req.getHeader("Origin");
+        String requestId = req.getHeader("requestId");
+        if (!StringUtils.hasLength(requestId)) {
+            requestId = "req_" + System.currentTimeMillis() + "_" + java.util.UUID.randomUUID().toString().substring(0, 8);
+        }
         HttpServletRequestWrapper wrapper;
         try {
             String owner = authenticationService.verifyToken(req.getHeader("authorization").replace("Bearer ", ""), req.getRequestURI(), requestId);

@@ -1,68 +1,76 @@
 package com.sk.webauth.service;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.jwk.source.RemoteJWKSet;
+import com.nimbusds.jose.proc.BadJOSEException;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import org.apache.http.auth.AuthenticationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Collections;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.time.Instant;
+import java.text.ParseException;
 
 @Service
 public class AuthenticationService {
-    private static final GsonFactory gsonFactory = new GsonFactory();
 
     private final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
-    private final GoogleIdTokenVerifier verifier;
-    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+    private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
 
-    public AuthenticationService(@Value("${gsi.client.id}") String CLIENT_ID) {
-        if (!StringUtils.hasLength(CLIENT_ID)) throw new RuntimeException("google client id empty.");
+    private final String tenantId;
+    private final String clientId;
 
-        verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), gsonFactory)
-                .setAudience(Collections.singletonList(CLIENT_ID))
-                .build();
+    public AuthenticationService(@Value("${azure.tenant.id}") String tenantId, @Value("${azure.client.id}") String clientId) throws MalformedURLException {
+        this.tenantId = tenantId;
+        this.clientId = clientId;
+
+        String jwksUri = "https://login.microsoftonline.com/" + tenantId + "/discovery/v2.0/keys";
+        JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(new URL(jwksUri));
+
+        jwtProcessor = new DefaultJWTProcessor<>();
+        JWSVerificationKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, keySource);
+        jwtProcessor.setJWSKeySelector(keySelector);
     }
 
-    public String verifyToken(String idTokenString, String contextPath,
-                              String requestId) throws AuthenticationException {
-        GoogleIdToken idToken = null;
+    public String verifyToken(String idToken, String contextPath, String requestId) throws AuthenticationException {
         try {
-            idToken = verifier.verify(idTokenString);
-        } catch (GeneralSecurityException | IOException e) {
-            log.warn(e.getLocalizedMessage());
-        }
-        if (idToken != null) {
-            GoogleIdToken.Payload payload = idToken.getPayload();
-
-            // Print user identifier
-            String userId = payload.getSubject();
-            // Get profile information from payload
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
-            LocalDateTime now = LocalDateTime.now();
-
-            long epoch = System.currentTimeMillis() / 1000;
-
-            if (payload.getExpirationTimeSeconds() < epoch) {
-                log.warn("token expired for name: {} email: {} userId: {} accessing at: {} at {} for requestId: {}", name, email, userId, contextPath, dtf.format(now), requestId);
-
+            if (idToken == null || idToken.isEmpty()) {
+                throw new AuthenticationException("Missing token");
             }
-            log.info("name: {} email: {} userId: {} accessed: {} at {} for requestId: {}", name, email, userId, contextPath, dtf.format(now), requestId);
+
+            SignedJWT signedJWT = SignedJWT.parse(idToken);
+            SecurityContext ctx = null;
+            var claimsSet = jwtProcessor.process(signedJWT, ctx);
+
+            if (!claimsSet.getAudience().contains(clientId)) {
+                throw new AuthenticationException("Invalid audience");
+            }
+
+            Instant exp = claimsSet.getExpirationTime().toInstant();
+            Instant now = Instant.now();
+            if (exp.isBefore(now)) {
+                log.warn("Token expired for requestId: {}", requestId);
+                throw new AuthenticationException("Token expired");
+            }
+
+            String email = claimsSet.getStringClaim("preferred_username");
+            log.info("User {} authenticated at {} for requestId {}", email, now, requestId);
+
             return email;
 
-        } else {
-            log.warn("Invalid ID token: {} for requestId: {}", idTokenString, requestId);
-            throw new AuthenticationException("Invalid Token Id");
+        } catch (ParseException | JOSEException | BadJOSEException e) {
+            log.error("JWT verification failed: {}", e.getMessage());
+            throw new AuthenticationException("Invalid token");
         }
     }
 
